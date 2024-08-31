@@ -1,12 +1,24 @@
+// En : Definitions of Analyze.h file.
+// Tr : Analyze.h dosyasının tanımlamaları.
 #include "Object.h"
 #include <vector>
 #include <numeric>
 #include <glm/gtx/rotate_vector.hpp>
 Object::Object(int begin, int end) : begin(begin), end(end)
 {
+    // En : All object must be added to the global object list.
+    // Tr : Tüm nesneler global nesne listesine eklenmelidir.
     GlobalObejcts.push_back(this);
 }
 Object::~Object() {}
+int Object::GetBegin() const
+{
+    return begin;
+}
+int Object::GetEnd() const
+{
+    return end;
+}
 glm::vec3 Object::GetPosition(int index) const
 {
     int temp = index * Interval + positionIndex;
@@ -49,6 +61,8 @@ void Object::Move(glm::vec3 value) noexcept
 }
 void Object::Rotate(glm::vec3 value) noexcept
 {
+    // En : Get the positions of the object at the defined indices.
+    // Tr : Nesnenin tanımlanan indislerindeki pozisyonlarını al.
     std::vector<glm::vec3> positions;
     for (int i = begin * Interval; i < end * Interval; i += Interval)
     {
@@ -57,6 +71,8 @@ void Object::Rotate(glm::vec3 value) noexcept
               z = GlobalData[i + positionIndex + 2];
         positions.push_back(glm::vec3(x, y, z));
     }
+    // En : Get the center of the object by points.
+    // Tr : Nesnenin merkezini noktalardan al.
     glm::vec3 center = std::accumulate(positions.begin(), positions.end(), glm::vec3(0)) / static_cast<float>(positions.size());
     for (glm::vec3 &position : positions)
     {

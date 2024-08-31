@@ -1,6 +1,5 @@
 <root>
-    <Box edge="0.25" color="7FD4BF" offset="0.6,-0.6,-0.2" rotation="0.25,0.25,0.25" scale="1,1,1" />
-    <Box edge="0.25" color="9AA4BF" offset="-0.65,0.65,0.35" rotation="0.7,0.55,0.25" scale="1,1,1" />
-    <Cone color="AAAAAA" radius="0.5" edge="0.5" rotation="0.25,0.35,0.15" />
-    <Cylinder color="ABCCDD" rotation="0.1,0.1,0.1" radius=".25" height="0.15" offset=".8,.8,.8" />
+    <Box color="E86060" edge=".3" rotation=".3,.3,0" />
+    <Cylinder color="CCAFDD" height="0.15" radius="0.075" offset="-.3,-.3,0" rotation="1,0,0" />
+    <Cone color="EDFFAA" height=".1" radius=".15" offset=".3,.25,0" rotation=".15,.15,.15" />
 </root>

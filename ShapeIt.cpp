@@ -18,7 +18,9 @@
 #endif
 
 #include "resources/Analyze.cpp"
+#ifdef ANALYZE_H
 #include "resources/Analyze.h"
+#endif
 
 std::map<std::string, GLuint> attributeLocations{
     {"position", 0},
@@ -94,24 +96,23 @@ void PrepareAndLoadData(MeshData data, GLuint &vertexArray, int &size)
         }
     }
 
-    GLuint vertexBuffer;
+#ifdef OBJECT_H
+    GlobalData = originalData;
+    GlobalDataElementSize = refSize * interval;
+#endif
+
+    GLuint vertexBuffer, elementBuffer;
+
+    glGenBuffers(1, &elementBuffer);
     glGenBuffers(1, &vertexBuffer);
     glGenVertexArrays(1, &vertexArray);
 
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
 
-    std::vector<float> processedData;
-    for (int index : indices)
-    {
-        int begin = index * interval;
-        for (int j = begin; j < begin + interval; j++)
-        {
-            processedData.push_back(originalData[j]);
-        }
-    }
-
-    glBufferData(GL_ARRAY_BUFFER, processedData.size() * sizeof(float), &processedData.front(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, refSize * interval * sizeof(float), originalData, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size * sizeof(int), &indices.front(), GL_STATIC_DRAW);
 
     for (std::map<std::string, int>::iterator it = offsets.begin(); it != offsets.end(); ++it)
     {
@@ -160,13 +161,24 @@ int main()
 
     Shader *shader = new Shader("Shaders\\vertex.vs", "Shaders\\fragment.fs");
 
+#ifdef OBJECT_H
+    float prevTime = 0, currentTime = 0;
+#endif
     while (!glfwWindowShouldClose(window))
     {
+#ifdef OBJECT_H
+        currentTime = glfwGetTime();
+        for (Object *o : GlobalObejcts)
+        {
+            o->Rotate(glm::vec3(0, 1.0f, 0) * (currentTime - prevTime) * 10.0f);
+        }
+        glBufferData(GL_ARRAY_BUFFER, GlobalDataElementSize * sizeof(float), GlobalData, GL_STATIC_DRAW);
+        prevTime = currentTime;
+#endif
         glClear(GL_COLOR_BUFFER_BIT);
-
         shader->Use();
         glBindVertexArray(vertexArray);
-        glDrawArrays(GL_TRIANGLES, 0, size);
+        glDrawElements(GL_TRIANGLES, size, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
 

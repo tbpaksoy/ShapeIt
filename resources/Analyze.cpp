@@ -1,3 +1,5 @@
+// En : Definitions of Analyze.h file.
+// Tr : Analyze.h dosyasının tanımlamaları.
 #include "Analyze.h"
 #include <stack>
 #include <iostream>
@@ -5,11 +7,14 @@
 #include <exception>
 #include <glm/gtc/quaternion.hpp>
 #include <sstream>
+#include <numeric>
 #ifdef OBJECT_H
 #include "Object.h"
 #endif
 #define PI 3.14159265358979323846f
 
+// En : Variables only will be used in this file.
+// Tr : Bu dosyada sadece kullanılacak olan değişkenler.
 const std::string definedTags[] =
     {
         "box",
@@ -44,6 +49,8 @@ const std::string elementTag[] =
 
 void AnalyzeTag(tinyxml2::XMLElement *element, MeshData &data)
 {
+    // En : Data definitons.
+    // Tr : Veri tanımları.
     data = MeshData();
     data["position"] = std::vector<glm::vec3>();
     data["index"] = std::vector<int>();
@@ -53,6 +60,8 @@ void AnalyzeTag(tinyxml2::XMLElement *element, MeshData &data)
     std::vector<int> &index = std::get<std::vector<int>>(data["index"]);
     std::vector<glm::vec3> &color = std::get<std::vector<glm::vec3>>(data["color"]);
 
+    // En : Stack for the depth first search.
+    // Tr : Derinlik öncelikli arama için yığın.
     std::stack<tinyxml2::XMLElement *> stack;
     stack.push(element);
     while (stack.size())
@@ -61,31 +70,55 @@ void AnalyzeTag(tinyxml2::XMLElement *element, MeshData &data)
         stack.pop();
         for (tinyxml2::XMLElement *sub = current->FirstChildElement(); sub != nullptr; sub = sub->NextSiblingElement())
         {
+            // En : Get the tag and lower its name.
+            // Tr : Etiketi al ve ismini küçült.
             std::string tag = sub->Name();
             std::transform(tag.begin(), tag.end(), tag.begin(), tolower);
+
+            // En : If the tag is predefined, extract the data else push to the stack.
+            // Tr : Eğer etiket önceden tanımlanmışsa, veriyi çıkar aksi halde yığına ekle.
             if (std::find(std::begin(definedTags), std::end(definedTags), tag) != std::end(definedTags))
             {
+                // En : Get the positional data and apply the transforms. If object model is defined, create the object.
+                // Tr : Pozisyon verilerini al ve dönüşümleri uygula. Eğer nesne modeli tanımlanmışsa, nesneyi oluştur.
 
+                // En : Step 1 : Assign the needed variables.
+                // Tr : Adım 1 : Gerekli değişkenleri ata.
                 int size;
-
+#ifdef OBJECT_H
+                int begin = position.size();
+#endif
                 int lastIndex = index.size() ? *std::max_element(index.begin(), index.end()) + 1 : 0;
 
+                // En : Step 2 : Get the positional data and apply the transforms.
+                // Tr : Adım 2 : Pozisyon verilerini al ve dönüşümleri uygula.
                 glm::vec3 *_position = positionalHandlers.at(tag)(sub, size);
                 _position = ApplyTranforms(sub, _position, size);
-
                 for (int i = 0; i < size; i++)
                     position.push_back(_position[i]);
 
+#ifdef OBJECT_H
+                // En : Optional Step : Create the an object.
+                // Tr : İsteğe bağlı Adım : Bir nesne oluştur.
+                int end = position.size();
+                new Object(begin, end);
+#endif
+                // En : Step 3 : Get the color data.
+                // Tr : Adım 3 : Renk verilerini al.
                 glm::vec3 *_color = AddColorData(size, sub);
                 for (int i = 0; i < size; i++)
                     color.push_back(_color[i]);
 
+                // En : Step 4 : Get the index data.
+                // Tr : Adım 4 : Index verilerini al.
                 int *_index = indexHandlers.at(tag)(sub, size);
                 for (int i = 0; i < size; i++)
                     index.push_back(_index[i] + lastIndex);
             }
             else
             {
+                // En : If the tag is not predefined, push to the stack.
+                // Tr : Eğer etiket önceden tanımlanmamışsa, yığına ekle.
                 stack.push(sub);
             }
         }
@@ -181,8 +214,8 @@ glm::vec3 *CylinderPositionalData(tinyxml2::XMLElement *element, int &size)
         {
             std::cout << "Error: invalid resolution value : " << element->Attribute("resolution") << std::endl;
         }
-    size = 2 * resolution;
-    glm::vec3 *position = new glm::vec3[2 * resolution];
+    size = 2 * resolution + 2;
+    glm::vec3 *position = new glm::vec3[size];
     for (int i = 0; i < resolution; i++)
     {
         float angle = 2 * PI * i / resolution;
@@ -190,11 +223,14 @@ glm::vec3 *CylinderPositionalData(tinyxml2::XMLElement *element, int &size)
         position[i] = glm::vec3(x, -height / 2, z);
         position[i + resolution] = glm::vec3(x, height / 2, z);
     }
+    position[size - 1] = glm::vec3(0, -height / 2, 0);
+    position[size - 2] = glm::vec3(0, height / 2, 0);
     return position;
 }
 
 glm::vec3 *ConePositionalData(tinyxml2::XMLElement *element, int &size)
 {
+    // TODO: Add the points of the bottom.
     float radius = 1.0f, height = 1.0f;
     if (element->Attribute("radius"))
         try
@@ -237,6 +273,7 @@ glm::vec3 *ConePositionalData(tinyxml2::XMLElement *element, int &size)
 
 glm::vec3 *ArrayPositionalData(tinyxml2::XMLElement *element, int &size)
 {
+    // TODO: Test this function.
     std::vector<glm::vec3> position;
     for (tinyxml2::XMLElement *sub = element->FirstChildElement(); sub != element->LastChildElement(); sub = element->NextSiblingElement())
     {
@@ -391,6 +428,8 @@ glm::vec3 *AddColorData(int size, tinyxml2::XMLElement *element)
 
 int *BoxIndexData(tinyxml2::XMLElement *element, int &size)
 {
+    // FIXME: Indices not in correct order.
+
     int index[] = {
         0, 1, 3, 0, 3, 2,
         0, 4, 6, 1, 3, 7,
@@ -440,22 +479,35 @@ int *CylinderIndexData(tinyxml2::XMLElement *element, int &size)
         {
             std::cout << "Error: invalid resolution value : " << element->Attribute("resolution") << std::endl;
         }
-    size = 6 * resolution;
-    int *index = new int[6 * resolution];
+    size = 12 * resolution;
+    int *index = new int[size];
     for (int i = 0; i < resolution; i++)
     {
-        index[6 * i] = i;
-        index[6 * i + 1] = (i + 1) % resolution;
-        index[6 * i + 2] = (i + 1) % resolution + resolution;
-        index[6 * i + 3] = i;
-        index[6 * i + 4] = (i + 1) % resolution + resolution;
-        index[6 * i + 5] = i + resolution;
+        // En : Side faces.
+        // Tr : Yan yüzler.
+        index[12 * i] = i;
+        index[12 * i + 1] = (i + 1) % resolution;
+        index[12 * i + 2] = (i + 1) % resolution + resolution;
+        index[12 * i + 3] = i;
+        index[12 * i + 4] = (i + 1) % resolution + resolution;
+        index[12 * i + 5] = i + resolution;
+        // En : Bottom face.
+        // Tr : Alt yüz.
+        index[12 * i + 6] = i;
+        index[12 * i + 7] = (i + 1) % resolution;
+        index[12 * i + 8] = 2 * resolution + 1;
+        // En : Top face.
+        // Tr : Üst yüz.
+        index[12 * i + 9] = (i + 1) % resolution + resolution;
+        index[12 * i + 10] = i + resolution;
+        index[12 * i + 11] = 2 * resolution;
     }
     return index;
 }
 
 int *ConeIndexData(tinyxml2::XMLElement *element, int &size)
 {
+    // TODO: Add the indices of the bottom face.
     int resolution = 32;
     if (element->Attribute("resolution"))
     {
@@ -474,6 +526,7 @@ int *ConeIndexData(tinyxml2::XMLElement *element, int &size)
 
 int *ArrayIndexData(tinyxml2::XMLElement *element, int &size)
 {
+    // TODO: Test this function.
     std::vector<tinyxml2::XMLElement *> matchingElements;
     for (tinyxml2::XMLElement *sub = element->FirstChildElement(); sub != element->LastChildElement(); sub = element->NextSiblingElement())
     {
@@ -506,7 +559,7 @@ int *ArrayIndexData(tinyxml2::XMLElement *element, int &size)
 
 int *PrismIndexData(tinyxml2::XMLElement *element, int &size)
 {
-    // TODO:implement this function
+    // TODO: Implement this function
     throw std::exception();
 }
 
@@ -520,34 +573,38 @@ glm::vec3 *Translate(glm::vec3 *input, int size, glm::vec3 offset)
 
 glm::vec3 *Rotate(glm::vec3 *input, int size, glm::vec3 rotation)
 {
+    // FIXME: Rotation is not in correct unit.
     float x = rotation.x, y = rotation.y, z = rotation.z;
     float divider = sqrt(x * x + y * y + z * z);
     float u = x / divider, v = y / divider, w = z / divider;
-
+    glm::vec3 center = std::accumulate(input, input + size, glm::vec3(0, 0, 0)) / (float)size;
     glm::vec3 *output = new glm::vec3[size];
     for (int i = 0; i < size; i++)
     {
-        glm::vec3 v3 = input[i];
-        float a = v3.x, b = v3.y, c = v3.z;
-        float
-            _a = (a * cos(z * PI) - b * sin(z * PI)) * cos(y * PI) + c * sin(y * PI),
-            _b = (a * sin(z * PI) + b * cos(z * PI)) * cos(x * PI) - (-(a * cos(z * PI) - b * sin(z * PI)) * sin(y * PI) + c * cos(y * PI)) * sin(x * PI),
-            _c = (a * sin(z * PI) + b * cos(z * PI)) * sin(x * PI) + ((a * cos(z * PI) - b * sin(z * PI)) * sin(y * PI) + c * cos(y * PI)) * cos(x * PI);
-        output[i] = glm::vec3(_a, _b, _c);
+        glm::vec3 v3 = input[i] - center;
+        v3 = glm::rotateX(v3, rotation.x);
+        v3 = glm::rotateY(v3, rotation.y);
+        v3 = glm::rotateZ(v3, rotation.z);
+        output[i] = v3 + center;
     }
     return output;
 }
 
-glm::vec3 *Rotate(glm::vec3 *input, int size, glm::quat rotaion)
+glm::vec3 *Rotate(glm::vec3 *input, int size, glm::quat rotation)
 {
+    // FIXME: Rotation is not in correct unit.
     glm::vec3 *output = new glm::vec3[size];
+    glm::vec3 center = std::accumulate(input, input + size, glm::vec3(0, 0, 0)) / (float)size;
     for (int i = 0; i < size; i++)
     {
         glm::vec3 v = input[i];
-        output[i] = glm::vec3(
-            rotaion.w * v.x + rotaion.y * v.z - rotaion.z * v.y,
-            rotaion.w * v.y - rotaion.x * v.z + rotaion.z * v.z,
-            rotaion.w * v.z + rotaion.x * v.y - rotaion.y * v.x);
+        v -= center;
+        v = glm::vec3(
+            rotation.w * v.x + rotation.y * v.z - rotation.z * v.y,
+            rotation.w * v.y - rotation.x * v.z + rotation.z * v.z,
+            rotation.w * v.z + rotation.x * v.y - rotation.y * v.x);
+        v += center;
+        output[i] = v;
     }
     return output;
 }
