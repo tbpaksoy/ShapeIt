@@ -1,5 +1,6 @@
 <root>
-    <Box color="E86060" edge=".3" rotation=".3,.3,0" />
-    <Cylinder color="CCAFDD" height="0.15" radius="0.075" offset="-.3,-.3,0" rotation="1,0,0" />
-    <Cone color="EDFFAA" height=".1" radius=".15" offset=".3,.25,0" rotation=".15,.15,.15" />
+    <!--     <Box color="E86060" edge=".3" rotation="-.2,-.2,-.2" /> -->
+    <Cylinder color="CCAFDD" height="0.15" radius="0.075" offset="-.3,-.3,0" rotation="1,0,0"
+        resolution="8" />  <!--     <Cone color="EDFFAA" height=".1" radius=".15" offset=".3,.25,0"
+    rotation=".15,.15,.15" /> -->
 </root>

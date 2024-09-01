@@ -428,15 +428,13 @@ glm::vec3 *AddColorData(int size, tinyxml2::XMLElement *element)
 
 int *BoxIndexData(tinyxml2::XMLElement *element, int &size)
 {
-    // FIXME: Indices not in correct order.
-
     int index[] = {
         0, 1, 3, 0, 3, 2,
-        0, 4, 6, 1, 3, 7,
-        1, 5, 7, 4, 7, 6,
-        6, 0, 2, 5, 4, 7,
-        0, 5, 4, 0, 5, 1,
-        2, 7, 6, 7, 3, 2};
+        6, 4, 0, 0, 2, 6,
+        4, 7, 5, 6, 7, 4,
+        7, 3, 1, 1, 5, 7,
+        4, 5, 0, 0, 5, 1,
+        7, 6, 2, 2, 3, 7};
     size = 36;
     int *indexArray = new int[size];
     for (int i = 0; i < size; i++)
@@ -486,11 +484,11 @@ int *CylinderIndexData(tinyxml2::XMLElement *element, int &size)
         // En : Side faces.
         // Tr : Yan yüzler.
         index[12 * i] = i;
-        index[12 * i + 1] = (i + 1) % resolution;
-        index[12 * i + 2] = (i + 1) % resolution + resolution;
+        index[12 * i + 1] = (i + 1) % resolution + resolution;
+        index[12 * i + 2] = (i + 1) % resolution;
         index[12 * i + 3] = i;
-        index[12 * i + 4] = (i + 1) % resolution + resolution;
-        index[12 * i + 5] = i + resolution;
+        index[12 * i + 4] = i + resolution;
+        index[12 * i + 5] = (i + 1) % resolution + resolution;
         // En : Bottom face.
         // Tr : Alt yüz.
         index[12 * i + 6] = i;

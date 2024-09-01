@@ -22,6 +22,9 @@
 #include "resources/Analyze.h"
 #endif
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 std::map<std::string, GLuint> attributeLocations{
     {"position", 0},
     {"color", 1},
@@ -143,6 +146,9 @@ int main()
 
     glfwMakeContextCurrent(window);
 
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
     GLenum err = glewInit();
     if (err != GLEW_OK)
     {
@@ -170,7 +176,7 @@ int main()
         currentTime = glfwGetTime();
         for (Object *o : GlobalObejcts)
         {
-            o->Rotate(glm::vec3(0, 1.0f, 0) * (currentTime - prevTime) * 10.0f);
+            o->Rotate(glm::vec3(0.35f, 0.35f, 0.35f) * (currentTime - prevTime) * 20.0f);
         }
         glBufferData(GL_ARRAY_BUFFER, GlobalDataElementSize * sizeof(float), GlobalData, GL_STATIC_DRAW);
         prevTime = currentTime;

@@ -77,9 +77,9 @@ void Object::Rotate(glm::vec3 value) noexcept
     for (glm::vec3 &position : positions)
     {
         position -= center;
-        position = glm::rotate(position, glm::radians(value.x), glm::vec3(0, 1, 0));
-        position = glm::rotate(position, glm::radians(value.y), glm::vec3(0, 1, 0));
-        position = glm::rotate(position, glm::radians(value.z), glm::vec3(0, 1, 0));
+        position = glm::rotateX(position, glm::radians(value.x));
+        position = glm::rotateY(position, glm::radians(value.y));
+        position = glm::rotateZ(position, glm::radians(value.z));
         position += center;
     }
     for (int i = begin * Interval, j = 0; i < end * Interval; i += Interval, j++)
