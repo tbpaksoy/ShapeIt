@@ -1,6 +1,15 @@
 <root>
-    <!--     <Box color="E86060" edge=".3" rotation="-.2,-.2,-.2" /> -->
+    <!--     <Box color="E86060" edge=".3" rotation="-.2,-.2,-.2" />
     <Cylinder color="CCAFDD" height="0.15" radius="0.075" offset="-.3,-.3,0" rotation="1,0,0"
-        resolution="8" />  <!--     <Cone color="EDFFAA" height=".1" radius=".15" offset=".3,.25,0"
-    rotation=".15,.15,.15" /> -->
+        resolution="8" /> -->
+    <!--     <Cone color="EDFFAA" height=".1" radius=".15" offset=".3,.25,0"
+        rotation=".15,.15,.15" /> -->
+    <Array color="ACACFF">
+        <Vertex x="0.1" y="0" z="0" />
+        <Vertex x="0" y="0.1" z="0" />
+        <Vertex x="-0.1" y="0" z="0" />
+        <indices>
+            0,1,2
+        </indices>
+    </Array>
 </root>

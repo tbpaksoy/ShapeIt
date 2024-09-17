@@ -12,7 +12,7 @@
 #include "resources/Shader.h"
 #include "resources/Shader.cpp"
 
-#include "resources/Object.h"
+// #include "resources/Object.h"
 #ifdef OBJECT_H
 #include "resources/Object.cpp"
 #endif
@@ -25,6 +25,11 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include "resources/Text.h"
+#ifdef TEXT_H
+#include "resources/Text.cpp"
+#endif
+
 std::map<std::string, GLuint> attributeLocations{
     {"position", 0},
     {"color", 1},
@@ -36,7 +41,17 @@ std::map<std::string, GLuint> attributeSizes{
     {"normal", 3},
     {"uv", 2}};
 
-void PrepareAndLoadData(MeshData data, GLuint &vertexArray, int &size)
+void ErrorCallback(int error, const char *description)
+{
+    std::cout << "Error: " << description << std::endl;
+}
+
+void ErrorDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
+{
+    std::cout << "Error: " << message << std::endl;
+}
+
+void PrepareAndLoadMeshData(MeshData data, GLuint &vertexArray, int &size)
 {
     if (data.find("position") == data.end() || data.find("index") == data.end() || data.find("color") == data.end())
     {
@@ -133,6 +148,62 @@ void PrepareAndLoadData(MeshData data, GLuint &vertexArray, int &size)
     }
 }
 
+#ifdef TEXT_H
+void PrepareTextBuffer(std::vector<Text *> texts, GLuint &vertexArray, int &size)
+{
+    int _size = 0;
+    for (Text *t : texts)
+    {
+        _size += t->GetQuadCount() * 24;
+    }
+    float *data = new float[_size];
+
+    for (int i = 0, j = 0; j < _size; i++)
+    {
+        Text *text = texts[i];
+        int count;
+        float *vertices = text->GetVertices(count);
+        for (int k = j; k < j + count; k++)
+            data[k] = vertices[k - j];
+        j += count;
+    }
+
+    _size = 0;
+    for (Text *t : texts)
+    {
+        _size += t->GetQuadCount();
+    }
+    GLuint *textures = new GLuint[_size];
+    for (int i = 0, j = 0; j < _size; i++)
+    {
+        int count;
+        GLuint *tex = texts[i]->GetTextures(count);
+        for (int k = j; k < j + count; k++)
+            textures[k] = tex[k - j];
+        j += count;
+    }
+
+    float *verts = new float[24];
+    for (int i = 0; i < 24; i++)
+        verts[i] = data[i];
+
+    size = 6;
+
+    GLuint vertexBuffer;
+
+    glGenVertexArrays(1, &vertexArray);
+    glGenBuffers(1, &vertexBuffer);
+
+    glBindVertexArray(vertexArray);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts) * sizeof(float), verts, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+}
+#endif
+
 int main()
 {
 
@@ -157,37 +228,85 @@ int main()
         return -1;
     }
 
+    std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
+
+    glfwSetErrorCallback(ErrorCallback);
+    glDebugMessageCallback(ErrorDebugCallback, nullptr);
+
+    Shader *meshShader = new Shader("Shaders\\vertex.vs", "Shaders\\fragment.fs");
+
     tinyxml2::XMLDocument *doc = new tinyxml2::XMLDocument();
     doc->LoadFile("test.xml");
     MeshData md;
     AnalyzeTag(doc->RootElement(), md);
-    GLuint vertexArray;
-    int size;
-    PrepareAndLoadData(md, vertexArray, size);
-
-    Shader *shader = new Shader("Shaders\\vertex.vs", "Shaders\\fragment.fs");
+    GLuint meshVertexArray;
+    int meshSize;
+    PrepareAndLoadMeshData(md, meshVertexArray, meshSize);
 
 #ifdef OBJECT_H
     float prevTime = 0, currentTime = 0;
 #endif
+
+#ifdef TEXT_H
+
+    FT_Init_FreeType(&ft);
+
+    Shader *textShader = new Shader("Shaders\\text.vs", "Shaders\\text.fs");
+
+    textShader->SetUniform(std::string("projection").c_str(), glm::ortho(0.0f, 800.0f, 0.0f, 800.0f));
+
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR)
+    {
+        std::cout << "Error: " << error << std::endl;
+    }
+
+    Text *text = new Text("test", "fonts\\unifont-15.1.05.otf");
+
+    int size;
+    GLuint *textures = text->GetTextures(size);
+
+    for (int i = 0; i < size; i++)
+    {
+        std::cout << textures[i] << std::endl;
+    }
+
+    GLuint textVertexArray;
+    int textSize;
+    PrepareTextBuffer({text}, textVertexArray, textSize);
+
+#endif
+
     while (!glfwWindowShouldClose(window))
     {
+
+        glClear(GL_COLOR_BUFFER_BIT);
+
 #ifdef OBJECT_H
         currentTime = glfwGetTime();
         for (Object *o : GlobalObejcts)
         {
-            o->Rotate(glm::vec3(0.35f, 0.35f, 0.35f) * (currentTime - prevTime) * 20.0f);
+            // o->Rotate(glm::vec3(0.35f, 0.35f, 0.35f) * (currentTime - prevTime) * 20.0f);
         }
         glBufferData(GL_ARRAY_BUFFER, GlobalDataElementSize * sizeof(float), GlobalData, GL_STATIC_DRAW);
         prevTime = currentTime;
 #endif
-        glClear(GL_COLOR_BUFFER_BIT);
-        shader->Use();
-        glBindVertexArray(vertexArray);
-        glDrawElements(GL_TRIANGLES, size, GL_UNSIGNED_INT, 0);
+
+        meshShader->Use();
+        glBindVertexArray(meshVertexArray);
+        glDrawElements(GL_TRIANGLES, meshSize, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
-
         glfwPollEvents();
+
+#ifdef TEXT_H
+        textShader->Use();
+        glBindVertexArray(textVertexArray);
+        glDrawArrays(GL_TRIANGLES, 0, textSize * 24);
+#endif
     }
+
+#ifdef TEXT_H
+    FT_Done_FreeType(ft);
+#endif
 }

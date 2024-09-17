@@ -6,6 +6,7 @@
 #include <math.h>
 #include <exception>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <sstream>
 #include <numeric>
 #ifdef OBJECT_H
@@ -230,7 +231,6 @@ glm::vec3 *CylinderPositionalData(tinyxml2::XMLElement *element, int &size)
 
 glm::vec3 *ConePositionalData(tinyxml2::XMLElement *element, int &size)
 {
-    // TODO: Add the points of the bottom.
     float radius = 1.0f, height = 1.0f;
     if (element->Attribute("radius"))
         try
@@ -260,14 +260,15 @@ glm::vec3 *ConePositionalData(tinyxml2::XMLElement *element, int &size)
         {
             std::cout << "Error: invalid resolution value : " << element->Attribute("resolution") << std::endl;
         }
-    glm::vec3 *position = new glm::vec3[resolution + 1];
+    glm::vec3 *position = new glm::vec3[resolution + 2];
     for (int i = 0; i < resolution; i++)
     {
         float angle = 2 * PI * i / resolution;
         position[i] = glm::vec3(radius * cos(angle), -height / 2, radius * sin(angle));
     }
     position[resolution] = glm::vec3(0, height / 2, 0);
-    size = resolution + 1;
+    position[resolution + 1] = glm::vec3(0, -height / 2, 0);
+    size = resolution + 2;
     return position;
 }
 
@@ -275,7 +276,7 @@ glm::vec3 *ArrayPositionalData(tinyxml2::XMLElement *element, int &size)
 {
     // TODO: Test this function.
     std::vector<glm::vec3> position;
-    for (tinyxml2::XMLElement *sub = element->FirstChildElement(); sub != element->LastChildElement(); sub = element->NextSiblingElement())
+    for (tinyxml2::XMLElement *sub = element->FirstChildElement(); sub != nullptr; sub = sub->NextSiblingElement())
     {
         std::string tag = sub->Name();
         std::transform(tag.begin(), tag.end(), tag.begin(), tolower);
@@ -505,19 +506,22 @@ int *CylinderIndexData(tinyxml2::XMLElement *element, int &size)
 
 int *ConeIndexData(tinyxml2::XMLElement *element, int &size)
 {
-    // TODO: Add the indices of the bottom face.
     int resolution = 32;
     if (element->Attribute("resolution"))
     {
         resolution = std::stoi(element->Attribute("resolution"));
     }
-    size = resolution * 3;
+    size = resolution * 6;
     int *index = new int[size];
-    for (int i = 0, j = 0; j < size; i++, j += 3)
+    for (int i = 0, j = 0; j < size; i++, j += 6)
     {
-        index[3 * i] = i;
-        index[3 * i + 1] = (i + 1) % resolution;
-        index[3 * i + 2] = resolution;
+        index[6 * i] = i;
+        index[6 * i + 1] = (i + 1) % resolution;
+        index[6 * i + 2] = resolution;
+
+        index[6 * i + 3] = (i + 1) % resolution;
+        index[6 * i + 4] = i;
+        index[6 * i + 5] = resolution + 1;
     }
     return index;
 }
@@ -526,7 +530,7 @@ int *ArrayIndexData(tinyxml2::XMLElement *element, int &size)
 {
     // TODO: Test this function.
     std::vector<tinyxml2::XMLElement *> matchingElements;
-    for (tinyxml2::XMLElement *sub = element->FirstChildElement(); sub != element->LastChildElement(); sub = element->NextSiblingElement())
+    for (tinyxml2::XMLElement *sub = element->FirstChildElement(); sub != nullptr; sub = sub->NextSiblingElement())
     {
         std::string tag = sub->Name();
         std::transform(tag.begin(), tag.end(), tag.begin(), tolower);
