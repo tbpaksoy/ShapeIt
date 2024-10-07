@@ -16,16 +16,29 @@ int Interval = 11;
 class Object;
 std::vector<Object *> GlobalObejcts;
 
+#ifdef ADVANCED
+#include "Shader.h"
+enum CenterPreferece
+{
+    CenterOfVertices,
+    CustomDefinded,
+    BoundingBoxCenter
+}
+#endif
+
 // En : Class declaration for the object model.
 // Tr : Nesne modeli için sınıf bildirimi.
 class Object
 {
 
-    // TODO: Add the option of center preference.
-    // TODO: Add name as string as member and option.
-    // TODO: Add tranform values as member.
-    // TODO: Add optional individual shader for the object.
+    /*TODO: Add optional individual shader for the object.*/
 private:
+#ifdef ADVANCED
+    std::string name;
+    glm::vec3 position, rotation, scale;
+    Object *parent;
+    std::vector<Object *> children;
+#endif
     int positionIndex = 0, colorIndex = 3, normalIndex = 6, uvIndex = 9;
     int begin, end;
 
@@ -34,6 +47,13 @@ public:
     // Tr : Nesne modeli için yapıcı ve yıkıcı.
     Object(int begin, int end);
     ~Object();
+#ifdef ADVANCED
+    Object(int begin, int end, std::string name = nullptr, Object *parent = nullptr);
+#endif
+
+#ifdef ADVANCED
+    CenterPreferece centerPreference;
+#endif
 
     // En : Get the begin and end indices of the object.
     // Tr : Nesnenin başlangıç ve bitiş indislerini al.
@@ -45,9 +65,15 @@ public:
     glm::vec3 GetPosition(int index) const;
     glm::vec3 GetColor(int index) const;
     glm::vec3 GetNormal(int index) const;
+#ifdef ADVANCED
+    glm::vec3 GetCenter() const;
+#endif
     glm::vec2 GetUV(int index) const;
     void Move(glm::vec3 value) noexcept;
     void Rotate(glm::vec3 value) noexcept;
     void Scale(glm::vec3 value) noexcept;
+#ifdef ADVANCED
+    void CalculateBoundingBox(glm::vec3 &min, glm::vec3 &max);
+#endif
 };
 #endif

@@ -41,46 +41,34 @@ Shader::Shader(const char *vertexShaderSource, const char *fragmentShaderSource)
     glShaderSource(vertexShader, 1, &vShaderCode, nullptr);
     glCompileShader(vertexShader);
 
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR)
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
     {
-        std::cout << "Error: " << error << std::endl;
+        glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog);
+        std::cout << "Error: Vertex shader compilation failed." << std::endl
+                  << infoLog << std::endl;
     }
 
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fShaderCode, nullptr);
     glCompileShader(fragmentShader);
 
-    error = glGetError();
-    if (error != GL_NO_ERROR)
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success)
     {
-        std::cout << "Error: " << error << std::endl;
+        glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
+        std::cout << "Error: Vertex shader compilation failed." << std::endl
+                  << infoLog << std::endl;
     }
 
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
 
-    error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        std::cout << "Error: " << error << std::endl;
-    }
-
     glAttachShader(shaderProgram, fragmentShader);
 
-    error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        std::cout << "Error: " << error << std::endl;
-    }
-
     glLinkProgram(shaderProgram);
-
-    error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        std::cout << "Error: " << error << std::endl;
-    }
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -103,8 +91,10 @@ GLuint Shader::GetProgram() const
 
 void Shader::SetUniform(const char *name, int value)
 {
-    Use();
     int loc = glGetUniformLocation(shaderProgram, name);
+
+    std::cout << shaderProgram << " " << name << " " << loc << std::endl;
+
     if (loc == -1)
     {
         std::cout << "Error: Uniform not found." << std::endl
@@ -114,8 +104,10 @@ void Shader::SetUniform(const char *name, int value)
 }
 void Shader::SetUniform(const char *name, unsigned int value)
 {
-    Use();
     int loc = glGetUniformLocation(shaderProgram, name);
+
+    std::cout << shaderProgram << " " << name << " " << loc << std::endl;
+
     if (loc == -1)
     {
         std::cout << "Error: Uniform not found." << std::endl
@@ -125,8 +117,10 @@ void Shader::SetUniform(const char *name, unsigned int value)
 }
 void Shader::SetUniform(const char *name, float value)
 {
-    Use();
     int loc = glGetUniformLocation(shaderProgram, name);
+
+    std::cout << shaderProgram << " " << name << " " << loc << std::endl;
+
     if (loc == -1)
     {
         std::cout << "Error: Uniform not found." << std::endl
@@ -136,8 +130,10 @@ void Shader::SetUniform(const char *name, float value)
 }
 void Shader::SetUniform(const char *name, glm::vec2 value)
 {
-    Use();
     int loc = glGetUniformLocation(shaderProgram, name);
+
+    std::cout << shaderProgram << " " << name << " " << loc << std::endl;
+
     if (loc == -1)
     {
         std::cout << "Error: Uniform not found." << std::endl
@@ -147,8 +143,10 @@ void Shader::SetUniform(const char *name, glm::vec2 value)
 }
 void Shader::SetUniform(const char *name, glm::vec3 value)
 {
-    Use();
     int loc = glGetUniformLocation(shaderProgram, name);
+
+    std::cout << shaderProgram << " " << name << " " << loc << std::endl;
+
     if (loc == -1)
     {
         std::cout << "Error: Uniform not found." << std::endl
@@ -158,8 +156,10 @@ void Shader::SetUniform(const char *name, glm::vec3 value)
 }
 void Shader::SetUniform(const char *name, glm::vec4 value)
 {
-    Use();
     int loc = glGetUniformLocation(shaderProgram, name);
+
+    std::cout << shaderProgram << " " << name << " " << loc << std::endl;
+
     if (loc == -1)
     {
         std::cout << "Error: Uniform not found." << std::endl
@@ -170,8 +170,10 @@ void Shader::SetUniform(const char *name, glm::vec4 value)
 }
 void Shader::SetUniform(const char *name, glm::mat4 value)
 {
-    Use();
     int loc = glGetUniformLocation(shaderProgram, name);
+
+    std::cout << shaderProgram << " " << name << " " << loc << std::endl;
+
     if (loc == -1)
     {
         std::cout << "Error: Uniform not found." << std::endl

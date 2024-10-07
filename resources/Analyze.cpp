@@ -9,9 +9,11 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <sstream>
 #include <numeric>
+
 #ifdef OBJECT_H
 #include "Object.h"
 #endif
+
 #define PI 3.14159265358979323846f
 
 // En : Variables only will be used in this file.
@@ -32,7 +34,8 @@ const std::map<std::string, std::function<glm::vec3 *(tinyxml2::XMLElement *, in
         {"cylinder", CylinderPositionalData},
         {"cone", ConePositionalData},
         {"array", ArrayPositionalData},
-        {"prism", PrismPositionalData}};
+        {"prism", PrismPositionalData},
+        {"import", ImportPositionalData}};
 const std::map<std::string, std::function<int *(tinyxml2::XMLElement *, int &)>> indexHandlers =
     {
         {"box", BoxIndexData},
@@ -40,13 +43,17 @@ const std::map<std::string, std::function<int *(tinyxml2::XMLElement *, int &)>>
         {"cylinder", CylinderIndexData},
         {"cone", ConeIndexData},
         {"array", ArrayIndexData},
-        {"prism", PrismIndexData}};
+        {"prism", PrismIndexData},
+        {"import", ImportIndexData}};
 const std::string elementTag[] =
     {
         "vertex",
         "edge",
         "face",
         "index"};
+/* IDEA: Add multiple compiling options. (21.09.2024)
+ IDEA: Add SIMPLE compiling option. (21.09.2024)
+ IDEA: Add ADVANCED compiling option. (21.09.2024)*/
 
 void AnalyzeTag(tinyxml2::XMLElement *element, MeshData &data)
 {
@@ -60,6 +67,11 @@ void AnalyzeTag(tinyxml2::XMLElement *element, MeshData &data)
     std::vector<glm::vec3> &position = std::get<std::vector<glm::vec3>>(data["position"]);
     std::vector<int> &index = std::get<std::vector<int>>(data["index"]);
     std::vector<glm::vec3> &color = std::get<std::vector<glm::vec3>>(data["color"]);
+
+#ifdef OBJECT_H &ADVANCED
+    int elementSize = 0;
+    std::map<tinyxml2::XMLElement *, Object *> objects;
+#endif
 
     // En : Stack for the depth first search.
     // Tr : Derinlik öncelikli arama için yığın.
@@ -102,7 +114,23 @@ void AnalyzeTag(tinyxml2::XMLElement *element, MeshData &data)
                 // En : Optional Step : Create the an object.
                 // Tr : İsteğe bağlı Adım : Bir nesne oluştur.
                 int end = position.size();
-                new Object(begin, end);
+                Object *object;
+#ifdef SIMPLE
+                object = new Object(begin, end);
+#elif defined(ADVANCED)
+                std::string name;
+                if (sub->Attribute("name"))
+                    name = sub->Attribute("name");
+                else
+                    name = "Object#" + std::to_string(elementSize++);
+
+                Object *parent = nullptr;
+                if (sub->Parent() && std::find(objects.begin(), objects.end(), sub->Parent()->ToElement()) != objects.end())
+                    parent = objects[sub->Parent()->ToElement()];
+
+                object = new Object(begin, end, name, parent);
+#endif
+                objects[sub] = object;
 #endif
                 // En : Step 3 : Get the color data.
                 // Tr : Adım 3 : Renk verilerini al.
@@ -128,30 +156,60 @@ void AnalyzeTag(tinyxml2::XMLElement *element, MeshData &data)
 
 glm::vec3 *BoxPositionalData(tinyxml2::XMLElement *element, int &size)
 {
-    float edge = 1.0f;
+    float x = 1.0f, y = 1.0f, z = 1.0f;
     if (element->Attribute("edge"))
         try
         {
-            edge = std::stof(element->Attribute("edge"));
+            x = y = z = std::stof(element->Attribute("edge"));
         }
         catch (const std::exception &e)
         {
             std::cout << "Error: invalid edge value : " << element->Attribute("edge") << std::endl;
         }
+    else
+    {
+        if (element->Attribute("width"))
+            try
+            {
+                x = std::stof(element->Attribute("width"));
+            }
+            catch (const std::exception &e)
+            {
+                std::cout << "Error: invalid x value : " << element->Attribute("x") << std::endl;
+            }
+        if (element->Attribute("height"))
+            try
+            {
+                y = std::stof(element->Attribute("height"));
+            }
+            catch (const std::exception &e)
+            {
+                std::cout << "Error: invalid y value : " << element->Attribute("y") << std::endl;
+            }
+        if (element->Attribute("depth"))
+            try
+            {
+                z = std::stof(element->Attribute("depth"));
+            }
+            catch (const std::exception &e)
+            {
+                std::cout << "Error: invalid z value : " << element->Attribute("depth") << std::endl;
+            }
+    }
+
     glm::vec3 *position = new glm::vec3[8];
 
-    position[0] = glm::vec3(-edge / 2, -edge / 2, -edge / 2);
-    position[1] = glm::vec3(-edge / 2, -edge / 2, edge / 2);
-    position[2] = glm::vec3(-edge / 2, edge / 2, -edge / 2);
-    position[3] = glm::vec3(-edge / 2, edge / 2, edge / 2);
-    position[4] = glm::vec3(edge / 2, -edge / 2, -edge / 2);
-    position[5] = glm::vec3(edge / 2, -edge / 2, edge / 2);
-    position[6] = glm::vec3(edge / 2, edge / 2, -edge / 2);
-    position[7] = glm::vec3(edge / 2, edge / 2, edge / 2);
+    position[0] = glm::vec3(-x / 2, -y / 2, -z / 2);
+    position[1] = glm::vec3(-x / 2, -y / 2, z / 2);
+    position[2] = glm::vec3(-x / 2, y / 2, -z / 2);
+    position[3] = glm::vec3(-x / 2, y / 2, z / 2);
+    position[4] = glm::vec3(x / 2, -y / 2, -z / 2);
+    position[5] = glm::vec3(x / 2, -y / 2, z / 2);
+    position[6] = glm::vec3(x / 2, y / 2, -z / 2);
+    position[7] = glm::vec3(x / 2, y / 2, z / 2);
     size = 8;
     return position;
 }
-
 glm::vec3 *CirclePositionalData(tinyxml2::XMLElement *element, int &size)
 {
     float radius = 1.0f;
@@ -183,7 +241,6 @@ glm::vec3 *CirclePositionalData(tinyxml2::XMLElement *element, int &size)
     size = resolution;
     return position;
 }
-
 glm::vec3 *CylinderPositionalData(tinyxml2::XMLElement *element, int &size)
 {
     float radius = 1.0f, height = 1.0f;
@@ -228,7 +285,6 @@ glm::vec3 *CylinderPositionalData(tinyxml2::XMLElement *element, int &size)
     position[size - 2] = glm::vec3(0, height / 2, 0);
     return position;
 }
-
 glm::vec3 *ConePositionalData(tinyxml2::XMLElement *element, int &size)
 {
     float radius = 1.0f, height = 1.0f;
@@ -271,10 +327,8 @@ glm::vec3 *ConePositionalData(tinyxml2::XMLElement *element, int &size)
     size = resolution + 2;
     return position;
 }
-
 glm::vec3 *ArrayPositionalData(tinyxml2::XMLElement *element, int &size)
 {
-    // TODO: Test this function.
     std::vector<glm::vec3> position;
     for (tinyxml2::XMLElement *sub = element->FirstChildElement(); sub != nullptr; sub = sub->NextSiblingElement())
     {
@@ -317,64 +371,36 @@ glm::vec3 *ArrayPositionalData(tinyxml2::XMLElement *element, int &size)
     glm::vec3 *positionArray = position.data();
     return positionArray;
 }
-
 glm::vec3 *PrismPositionalData(tinyxml2::XMLElement *element, int &size)
 {
-    float height = 1.0f;
+    // FIXME: Prism positional data is not correct. (6.10.2024)
+    float height = 1.0;
     if (element->Attribute("height"))
-        try
-        {
-            height = std::stof(element->Attribute("height"));
-        }
-        catch (const std::exception &e)
-        {
-            std::cout << "Error: invalid height value : " << element->Attribute("height") << std::endl;
-        }
-    std::vector<glm::vec3> position;
-    for (tinyxml2::XMLElement *sub = element->FirstChildElement(); element != element->LastChildElement(); sub = element->NextSiblingElement())
     {
-        std::string tag = sub->Name();
-        std::transform(tag.begin(), tag.end(), tag.begin(), tolower);
-        if (tag == "vertex")
-        {
-            float x = 0, y = 0, z = 0;
-            if (sub->Attribute("x"))
-                try
-                {
-                    x = std::stof(sub->Attribute("x"));
-                }
-                catch (const std::exception &e)
-                {
-                    std::cout << "Error: invalid x value : " << sub->Attribute("x") << std::endl;
-                }
-            if (sub->Attribute("y"))
-                try
-                {
-                    y = std::stof(sub->Attribute("y"));
-                }
-                catch (const std::exception &e)
-                {
-                    std::cout << "Error: invalid y value : " << sub->Attribute("y") << std::endl;
-                }
-            if (sub->Attribute("z"))
-                try
-                {
-                    z = std::stof(sub->Attribute("z"));
-                }
-                catch (const std::exception &e)
-                {
-                    std::cout << "Error: invalid z value : " << sub->Attribute("z") << std::endl;
-                }
-            position.push_back(glm::vec3(x, y, z));
-        }
+        height = std::stof(element->Attribute("height"));
     }
-    for (glm::vec3 v : position)
+    std::vector<glm::vec2> points;
+    for (tinyxml2::XMLElement *sub = element->FirstChildElement(); sub; sub = sub->NextSiblingElement())
     {
-        position.push_back(v + glm::vec3(0, height, 0));
+        float x = 0, y = 0;
+        if (sub->Attribute("x"))
+            x = std::stof(sub->Attribute("x"));
+        if (sub->Attribute("y"))
+            y = std::stof(sub->Attribute("y"));
+        points.push_back(glm::vec2(x, y));
     }
-    size = position.size();
-    glm::vec3 *positionArray = position.data();
-    return positionArray;
+    size = points.size() * 2;
+    glm::vec3 *result = new glm::vec3[size];
+    for (int i = 0; i < points.size(); i++)
+    {
+        result[i] = glm::vec3(points[i].x, height / 2, points[i].y);
+        result[i] = glm::vec3(points[i].x, -height / 2, points[i].y);
+    }
+    return result;
+}
+glm::vec3 *ImportPositionalData(tinyxml2::XMLElement *element, int &size)
+{
+    // TODO: Implement the import positional data. (7.10.2024)
 }
 
 glm::vec3 *AddColorData(int size, glm::vec3 color)
@@ -384,7 +410,6 @@ glm::vec3 *AddColorData(int size, glm::vec3 color)
         output[i] = color;
     return output;
 }
-
 glm::vec3 *AddColorData(int size, tinyxml2::XMLElement *element)
 {
     glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -426,6 +451,13 @@ glm::vec3 *AddColorData(int size, tinyxml2::XMLElement *element)
         output[i] = color;
     return output;
 }
+glm::vec3 *AddParametricColorData(int size, std::function<glm::vec3(glm::vec3)> colorFunction, glm::vec3 *positonalData)
+{
+    glm::vec3 *output = new glm::vec3[size];
+    for (int i = 0; i < size; i++)
+        output[i] = colorFunction(positonalData[i]);
+    return output;
+}
 
 int *BoxIndexData(tinyxml2::XMLElement *element, int &size)
 {
@@ -442,7 +474,6 @@ int *BoxIndexData(tinyxml2::XMLElement *element, int &size)
         indexArray[i] = index[i];
     return indexArray;
 }
-
 int *CircleIndexData(tinyxml2::XMLElement *element, int &size)
 {
     int resolution = 32;
@@ -465,7 +496,6 @@ int *CircleIndexData(tinyxml2::XMLElement *element, int &size)
     }
     return index;
 }
-
 int *CylinderIndexData(tinyxml2::XMLElement *element, int &size)
 {
     int resolution = 32;
@@ -503,7 +533,6 @@ int *CylinderIndexData(tinyxml2::XMLElement *element, int &size)
     }
     return index;
 }
-
 int *ConeIndexData(tinyxml2::XMLElement *element, int &size)
 {
     int resolution = 32;
@@ -525,10 +554,8 @@ int *ConeIndexData(tinyxml2::XMLElement *element, int &size)
     }
     return index;
 }
-
 int *ArrayIndexData(tinyxml2::XMLElement *element, int &size)
 {
-    // TODO: Test this function.
     std::vector<tinyxml2::XMLElement *> matchingElements;
     for (tinyxml2::XMLElement *sub = element->FirstChildElement(); sub != nullptr; sub = sub->NextSiblingElement())
     {
@@ -558,11 +585,45 @@ int *ArrayIndexData(tinyxml2::XMLElement *element, int &size)
     int *indexArray = indices.data();
     return indexArray;
 }
-
 int *PrismIndexData(tinyxml2::XMLElement *element, int &size)
 {
-    // TODO: Implement this function
-    throw std::exception();
+    // FIXME: Prism index data is not correct. (6.10.2024)
+    int count = 0;
+    for (tinyxml2::XMLElement *sub = element->FirstChildElement(); sub != nullptr; sub = sub->NextSiblingElement())
+    {
+        std::string tag = sub->Name();
+        std::transform(tag.begin(), tag.end(), tag.begin(), tolower);
+        if (tag == "vertex")
+            count++;
+    }
+    if (!count)
+        return nullptr;
+    size = 12 * count;
+    int *result = new int[size];
+    for (int i = 0, j = 0; i < size; i += 12, j++)
+    {
+        result[i] = j;
+        result[i + 1] = (j + 1) % count;
+        result[i + 2] = (j + 2) % count;
+
+        result[i + 3] = j + count;
+        result[i + 4] = (j + 1) % count + count;
+        result[i + 5] = (j + 2) % count + count;
+
+        result[i + 6] = j;
+        result[i + 7] = (j + 2) % count;
+        result[i + 8] = (j + 3) % count;
+
+        result[i + 9] = j;
+        result[i + 10] = (j + 3) % count;
+        result[i + 11] = j + count;
+    }
+
+    return result;
+}
+int *ImportIndexData(tinyxml2::XMLElement *element, int &size)
+{
+    // TODO: Implement the import index data. (7.10.2024)
 }
 
 glm::vec3 *Translate(glm::vec3 *input, int size, glm::vec3 offset)
@@ -572,7 +633,6 @@ glm::vec3 *Translate(glm::vec3 *input, int size, glm::vec3 offset)
         output[i] = input[i] + offset;
     return output;
 }
-
 glm::vec3 *Rotate(glm::vec3 *input, int size, glm::vec3 rotation)
 {
     // FIXME: Rotation is not in correct unit.
@@ -591,7 +651,6 @@ glm::vec3 *Rotate(glm::vec3 *input, int size, glm::vec3 rotation)
     }
     return output;
 }
-
 glm::vec3 *Rotate(glm::vec3 *input, int size, glm::quat rotation)
 {
     // FIXME: Rotation is not in correct unit.
@@ -610,7 +669,6 @@ glm::vec3 *Rotate(glm::vec3 *input, int size, glm::quat rotation)
     }
     return output;
 }
-
 glm::vec3 *Scale(glm::vec3 *input, int size, glm::vec3 scale)
 {
     glm::vec3 *output = new glm::vec3[size];
@@ -618,7 +676,6 @@ glm::vec3 *Scale(glm::vec3 *input, int size, glm::vec3 scale)
         output[i] = glm::vec3(input[i].x * scale.x, input[i].y * scale.y, input[i].z * scale.z);
     return output;
 }
-
 glm::vec3 *ApplyTranforms(tinyxml2::XMLElement *element, glm::vec3 *input, int size)
 {
     glm::vec3 scale = glm::vec3(1, 1, 1);

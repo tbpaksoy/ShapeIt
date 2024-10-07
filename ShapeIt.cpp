@@ -1,3 +1,9 @@
+// En : Define the preprocessor directives for the project at the beginning of the file.
+// Tr : Dosyanın başında projenin ön işlemci direktiflerini tanımlayın.
+#ifndef ADVANCED
+#define SIMPLE
+#endif
+
 #include <iostream>
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -12,7 +18,7 @@
 #include "resources/Shader.h"
 #include "resources/Shader.cpp"
 
-// #include "resources/Object.h"
+#include "resources/Object.h"
 #ifdef OBJECT_H
 #include "resources/Object.cpp"
 #endif
@@ -25,7 +31,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#include "resources/Text.h"
+// #include "resources/Text.h"
 #ifdef TEXT_H
 #include "resources/Text.cpp"
 #endif
@@ -213,7 +219,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
-    GLFWwindow *window = glfwCreateWindow(800, 800, "ShapeIt", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(1920 / 2, 1080 / 2, "ShapeIt", nullptr, nullptr);
 
     glfwMakeContextCurrent(window);
 
@@ -251,42 +257,33 @@ int main()
 
     FT_Init_FreeType(&ft);
 
-    Shader *textShader = new Shader("Shaders\\text.vs", "Shaders\\text.fs");
-
-    textShader->SetUniform(std::string("projection").c_str(), glm::ortho(0.0f, 800.0f, 0.0f, 800.0f));
-
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        std::cout << "Error: " << error << std::endl;
-    }
-
     Text *text = new Text("test", "fonts\\unifont-15.1.05.otf");
 
     int size;
     GLuint *textures = text->GetTextures(size);
 
-    for (int i = 0; i < size; i++)
-    {
-        std::cout << textures[i] << std::endl;
-    }
-
     GLuint textVertexArray;
     int textSize;
     PrepareTextBuffer({text}, textVertexArray, textSize);
+
+    Shader *textShader = new Shader("Shaders\\text.vs", "Shaders\\text.fs");
+
+    GLint success;
+    glGetShaderiv(textShader->GetProgram(), GL_LINK_STATUS, &success);
+    std::cout << "GL_LINK_STATUS " << success << std::endl;
+
+    textShader->SetUniform(std::string("projection").c_str(), glm::ortho(0.0f, 800.0f, 0.0f, 800.0f));
 
 #endif
 
     while (!glfwWindowShouldClose(window))
     {
 
-        glClear(GL_COLOR_BUFFER_BIT);
-
 #ifdef OBJECT_H
         currentTime = glfwGetTime();
         for (Object *o : GlobalObejcts)
         {
-            // o->Rotate(glm::vec3(0.35f, 0.35f, 0.35f) * (currentTime - prevTime) * 20.0f);
+            o->Rotate(glm::vec3(0.0f, 0.35f, 0.0f) * (currentTime - prevTime) * 50.0f);
         }
         glBufferData(GL_ARRAY_BUFFER, GlobalDataElementSize * sizeof(float), GlobalData, GL_STATIC_DRAW);
         prevTime = currentTime;
@@ -296,14 +293,16 @@ int main()
         glBindVertexArray(meshVertexArray);
         glDrawElements(GL_TRIANGLES, meshSize, GL_UNSIGNED_INT, 0);
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-
 #ifdef TEXT_H
         textShader->Use();
         glBindVertexArray(textVertexArray);
         glDrawArrays(GL_TRIANGLES, 0, textSize * 24);
 #endif
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+
+        glClear(GL_COLOR_BUFFER_BIT);
     }
 
 #ifdef TEXT_H

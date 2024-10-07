@@ -36,6 +36,7 @@ glm::vec3 *CylinderPositionalData(tinyxml2::XMLElement *element, int &size);
 glm::vec3 *ConePositionalData(tinyxml2::XMLElement *element, int &size);
 glm::vec3 *ArrayPositionalData(tinyxml2::XMLElement *element, int &size);
 glm::vec3 *PrismPositionalData(tinyxml2::XMLElement *element, int &size);
+glm::vec3 *ImportPositionalData(tinyxml2::XMLElement *element, int &size);
 
 // En : The functions that will add color data.
 // Tr : Renk verilerini ekleyecek olan fonksiyonlar.
@@ -51,6 +52,7 @@ int *CylinderIndexData(tinyxml2::XMLElement *element, int &size);
 int *ConeIndexData(tinyxml2::XMLElement *element, int &size);
 int *ArrayIndexData(tinyxml2::XMLElement *element, int &size);
 int *PrismIndexData(tinyxml2::XMLElement *element, int &size);
+int *ImportIndexData(tinyxml2::XMLElement *element, int &size);
 
 // En : Tranform functions for the positional data.
 // Tr : Pozisyon verileri için dönüşüm fonksiyonları.

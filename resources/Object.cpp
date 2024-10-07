@@ -11,6 +11,12 @@ Object::Object(int begin, int end) : begin(begin), end(end)
     GlobalObejcts.push_back(this);
 }
 Object::~Object() {}
+#ifdef ADVANCED
+Object(int begin, int end, std::string name, Object *parent) : begin(begin), end(end), name(name), parent(parent)
+{
+    GlobalObejcts.push_back(this);
+}
+#endif
 int Object::GetBegin() const
 {
     return begin;
@@ -43,6 +49,36 @@ glm::vec3 Object::GetNormal(int index) const
           z = GlobalData[temp + 2];
     return glm::vec3(x, y, z);
 }
+#ifdef ADVANCED
+glm::vec3 Object::GetCenter() const
+{
+    // TODO: Implement the center calculation. (25.09.2024)
+    glm::vec3 result = glm::vec3();
+    switch (centerPreference)
+    {
+    case CenterOfVertices:
+        for (int i = begin * 3; i < end * 3; i++)
+        {
+            float x = GlobalData[i + positionIndex], y = GlobalData[i + positionIndex + 1], z = GlobalData[i + positionIndex + 2];
+            result += glm::vec3(x, y, z);
+        }
+        result /= (float)(end - begin);
+        break;
+    case CustomDefined:
+        // TODO:Implement this section.
+        break;
+    case BoundingBoxCenter:
+        glm::vec3 min, max;
+        CalculateBoundingBox(min, max);
+        float x = (max.x - std::abs(min.x)) / 2,
+              y = (max.y - std::abs(min.y)) / 2,
+              z = (max.z - std::abs(min.z)) / 2;
+        result = glm::vec3(z, y, z);
+        break;
+    }
+    return result;
+}
+#endif
 glm::vec2 Object::GetUV(int index) const
 {
     int temp = index * Interval + uvIndex;
@@ -69,6 +105,7 @@ void Object::Rotate(glm::vec3 value) noexcept
         float x = GlobalData[i + positionIndex],
               y = GlobalData[i + positionIndex + 1],
               z = GlobalData[i + positionIndex + 2];
+
         positions.push_back(glm::vec3(x, y, z));
     }
     // En : Get the center of the object by points.
@@ -113,3 +150,11 @@ void Object::Scale(glm::vec3 value) noexcept
         GlobalData[i + positionIndex + 2] = positions[j].z;
     }
 }
+#ifdef ADVANCED
+void Object::CalculateBoundingBox(glm::vec3 &min, glm::vec3 &max)
+{
+    for (int i = begin * Interval; i < end * Interval; i += 3)
+    {
+    }
+}
+#endif
