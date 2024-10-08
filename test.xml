@@ -1,7 +1,4 @@
 <root>
-    <Prism height=".25">
-        <Vertex x=".1" y=".1" />
-        <Vertex x=".2" y=".2" />
-        <Vertex x=".2" y=".1" />
-    </Prism>
+    <Box color="646464" height="0.3" width=".2" depth=".05" rotation="0.3,0.3,0.3" />
+    <Cone color="fe80bc" height="0.2" radius="0.1" offset="0.1,.3,.05" rotation="0.25,0.25,0.25" />
 </root>

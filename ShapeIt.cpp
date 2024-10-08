@@ -31,7 +31,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-// #include "resources/Text.h"
+#include "resources/Text.h"
 #ifdef TEXT_H
 #include "resources/Text.cpp"
 #endif
@@ -219,7 +219,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
-    GLFWwindow *window = glfwCreateWindow(1920 / 2, 1080 / 2, "ShapeIt", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(600, 600, "ShapeIt", nullptr, nullptr);
 
     glfwMakeContextCurrent(window);
 

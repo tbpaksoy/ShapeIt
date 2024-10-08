@@ -59,7 +59,7 @@ Shader::Shader(const char *vertexShaderSource, const char *fragmentShaderSource)
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
-        std::cout << "Error: Vertex shader compilation failed." << std::endl
+        std::cout << "Error: Fragment shader compilation failed." << std::endl
                   << infoLog << std::endl;
     }
 
