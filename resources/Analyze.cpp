@@ -9,6 +9,7 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <sstream>
 #include <numeric>
+#include <exprtk.hpp>
 
 #ifdef OBJECT_H
 #include "Object.h"
@@ -26,7 +27,8 @@ const std::string definedTags[] =
         "cone",
         "array",
         "prism",
-        "import"};
+        "import",
+        "parametric"};
 const std::map<std::string, std::function<glm::vec3 *(tinyxml2::XMLElement *, int &)>> positionalHandlers =
     {
         {"box", BoxPositionalData},
@@ -35,7 +37,8 @@ const std::map<std::string, std::function<glm::vec3 *(tinyxml2::XMLElement *, in
         {"cone", ConePositionalData},
         {"array", ArrayPositionalData},
         {"prism", PrismPositionalData},
-        {"import", ImportPositionalData}};
+        {"import", ImportPositionalData},
+        {"parametric", ParametricPositionalData}};
 const std::map<std::string, std::function<int *(tinyxml2::XMLElement *, int &)>> indexHandlers =
     {
         {"box", BoxIndexData},
@@ -44,7 +47,8 @@ const std::map<std::string, std::function<int *(tinyxml2::XMLElement *, int &)>>
         {"cone", ConeIndexData},
         {"array", ArrayIndexData},
         {"prism", PrismIndexData},
-        {"import", ImportIndexData}};
+        {"import", ImportIndexData},
+        {"parametric", ParametricIndexData}};
 const std::string elementTag[] =
     {
         "vertex",
@@ -402,6 +406,32 @@ glm::vec3 *ImportPositionalData(tinyxml2::XMLElement *element, int &size)
 {
     // TODO: Implement the import positional data. (7.10.2024)
 }
+glm::vec3 *ParametricPositionalData(tinyxml2::XMLElement *element, int &size)
+{
+    // TEST this function. (9.10.2024)
+    std::function<glm::vec3(float, float)> function = CreateParametricFunction(element);
+    float xMin = -1.0f, xMax = 1.0f, xDelta = 0.1f, zMin = -1.0f, zMax = 1.0f, zDelta = 0.1f;
+    if (element->Attribute("xMin"))
+        xMin = std::stof(element->Attribute("xMin"));
+    if (element->Attribute("xMax"))
+        xMax = std::stof(element->Attribute("xMax"));
+    if (element->Attribute("xDelta"))
+        xDelta = std::stof(element->Attribute("xDelta"));
+    if (element->Attribute("zMin"))
+        zMin = std::stof(element->Attribute("zMin"));
+    if (element->Attribute("zMax"))
+        zMax = std::stof(element->Attribute("zMax"));
+    if (element->Attribute("zDelta"))
+        zDelta = std::stof(element->Attribute("zDelta"));
+    int xCount = floor((xMax - xMin) / xDelta), zCount = floor((zMax - zMin) / zDelta);
+    size = xCount * zCount;
+    glm::vec3 *position = new glm::vec3[size];
+    int index = 0;
+    for (float x = xMin; x < xMax; x += xDelta)
+        for (float z = zMin; z < zMax; z += zDelta)
+            position[index++] = function(x, z);
+    return position;
+};
 
 glm::vec3 *AddColorData(int size, glm::vec3 color)
 {
@@ -625,6 +655,42 @@ int *ImportIndexData(tinyxml2::XMLElement *element, int &size)
 {
     // TODO: Implement the import index data. (7.10.2024)
 }
+int *ParametricIndexData(tinyxml2::XMLElement *element, int &size)
+{
+    // TEST this function.(9.10.2024)
+    float xMin = -1.0f, xMax = 1.0f, xDelta = 0.1f, zMin = -1.0f, zMax = 1.0f, zDelta = 0.1f;
+    if (element->Attribute("xMin"))
+        xMin = std::stof(element->Attribute("xMin"));
+    if (element->Attribute("xMax"))
+        xMax = std::stof(element->Attribute("xMax"));
+    if (element->Attribute("xDelta"))
+        xDelta = std::stof(element->Attribute("xDelta"));
+    if (element->Attribute("zMin"))
+        zMin = std::stof(element->Attribute("zMin"));
+    if (element->Attribute("zMax"))
+        zMax = std::stof(element->Attribute("zMax"));
+    if (element->Attribute("zDelta"))
+        zDelta = std::stof(element->Attribute("zDelta"));
+    int xCount = floor((xMax - xMin) / xDelta), zCount = floor((zMax - zMin) / zDelta);
+    size = xCount * zCount * 6;
+    int *index = new int[size];
+
+    for (int i = 0, j = 0; i < xCount - 1; i++)
+    {
+        for (int k = 0; k < zCount - 1; k++, j += 6)
+        {
+            index[j] = i + k * xCount;
+            index[j + 1] = index[j] + 1;
+            index[j + 2] = index[j + 1] + xCount;
+
+            index[j + 3] = index[j] + xCount;
+            index[j + 4] = index[j];
+            index[j + 5] = index[j + 2];
+        }
+    }
+
+    return index;
+}
 
 glm::vec3 *Translate(glm::vec3 *input, int size, glm::vec3 offset)
 {
@@ -799,4 +865,26 @@ glm::vec3 *ApplyTranforms(tinyxml2::XMLElement *element, glm::vec3 *input, int s
         input = Translate(input, size, offset);
     }
     return input;
+}
+
+std::function<glm::vec3(float, float)> CreateParametricFunction(tinyxml2::XMLElement *element)
+{
+    std::string eq = element->GetText();
+    if (eq.empty() || eq.find("y") != std::string::npos)
+        return [](float x, float z)
+        {
+            return glm::vec3();
+        };
+
+    return [eq](float x, float z)
+    {
+        exprtk::symbol_table<float> symbolTable;
+        symbolTable.add_variable("x", x);
+        symbolTable.add_variable("z", z);
+        exprtk::expression<float> expression;
+        expression.register_symbol_table(symbolTable);
+        exprtk::parser<float> parser;
+        parser.compile(eq, expression);
+        return glm::vec3(x, expression.value(), z);
+    };
 }

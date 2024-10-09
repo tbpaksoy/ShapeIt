@@ -31,7 +31,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#include "resources/Text.h"
+// #include "resources/Text.h"
 #ifdef TEXT_H
 #include "resources/Text.cpp"
 #endif

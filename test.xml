@@ -1,4 +1,5 @@
 <root>
-    <Box color="646464" height="0.3" width=".2" depth=".05" rotation="0.3,0.3,0.3" />
-    <Cone color="fe80bc" height="0.2" radius="0.1" offset="0.1,.3,.05" rotation="0.25,0.25,0.25" />
+    <Parametric color="efeefe" rotation="0.25,0.25,0" scale="0.33,0.33,0.33">
+        sin(x*z) + cos(z) + cos(x) - 2
+    </Parametric>
 </root>

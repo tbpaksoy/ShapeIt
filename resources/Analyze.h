@@ -14,6 +14,7 @@
 #include <map>
 #include <functional>
 #include <variant>
+#include <functional>
 
 #ifndef ANALYZE_H
 #define ANALYZE_H
@@ -37,6 +38,7 @@ glm::vec3 *ConePositionalData(tinyxml2::XMLElement *element, int &size);
 glm::vec3 *ArrayPositionalData(tinyxml2::XMLElement *element, int &size);
 glm::vec3 *PrismPositionalData(tinyxml2::XMLElement *element, int &size);
 glm::vec3 *ImportPositionalData(tinyxml2::XMLElement *element, int &size);
+glm::vec3 *ParametricPositionalData(tinyxml2::XMLElement *element, int &size);
 
 // En : The functions that will add color data.
 // Tr : Renk verilerini ekleyecek olan fonksiyonlar.
@@ -53,6 +55,7 @@ int *ConeIndexData(tinyxml2::XMLElement *element, int &size);
 int *ArrayIndexData(tinyxml2::XMLElement *element, int &size);
 int *PrismIndexData(tinyxml2::XMLElement *element, int &size);
 int *ImportIndexData(tinyxml2::XMLElement *element, int &size);
+int *ParametricIndexData(tinyxml2::XMLElement *element, int &size);
 
 // En : Tranform functions for the positional data.
 // Tr : Pozisyon verileri için dönüşüm fonksiyonları.
@@ -63,4 +66,5 @@ glm::vec3 *Scale(glm::vec3 *input, int size, glm::vec3 scale);
 
 glm::vec3 *ApplyTranforms(tinyxml2::XMLElement *element, glm::vec3 *input, int size);
 
+std::function<glm::vec3(float, float)> CreateParametricFunction(tinyxml2::XMLElement *element);
 #endif
