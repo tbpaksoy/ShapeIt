@@ -1,3 +1,6 @@
+#define ARCHITECTURE
+#define ADVANCED
+
 // En : This file contains the function prototypes for the functions that analyze the XML file and extract the data from it.
 // Tr : Bu dosya, XML dosyasını analiz eden ve içinden verileri çıkaran fonksiyonların prototiplerini içerir.
 
@@ -67,4 +70,53 @@ glm::vec3 *Scale(glm::vec3 *input, int size, glm::vec3 scale);
 glm::vec3 *ApplyTranforms(tinyxml2::XMLElement *element, glm::vec3 *input, int size);
 
 std::function<glm::vec3(float, float)> CreateParametricFunction(tinyxml2::XMLElement *element);
+#ifdef ADVANCED &&ARCHITECTURE
+
+#include <variant>
+
+typedef std::variant<float, std::string, int> ArchitecturalDataType;
+typedef std::map<std::string, ArchitecturalDataType> ArchitecturalData;
+#ifdef OBJECT_H
+#include "Object.h"
+typedef std::map<Object *, ArchitecturalData> ArchitecturalElementsData;
+#else
+typedef std::map<std::string, ArchitecturalData> ArchitecturalElementsData;
+#endif
+
+ArchitecturalData GlobalArchitecturalData;
+
+// TODO: Add support for walls, columns, beams, stairs, doors, windows, balcons, terraces.
+
+enum ColumnType
+{
+    CIRCLE,
+    BOX
+};
+
+enum WayOrientation
+{
+    LeftInside,
+    RightInside,
+    Inside
+};
+
+glm::vec3 *WallPositionalData(tinyxml2::XMLElement *element, int &size);
+glm::vec3 *ColumnPositionalData(tinyxml2::XMLElement *element, int &size);
+glm::vec3 *BeamPositionalData(tinyxml2::XMLElement *elememnt, int &size);
+glm::vec3 *StairPositionalData(tinyxml2::XMLElement *elememnt, int &size);
+glm::vec3 *DoorPositionalData(tinyxml2::XMLElement *elememnt, int &size);
+glm::vec3 *WindowPositionalData(tinyxml2::XMLElement *elememnt, int &size);
+glm::vec3 *BalconyPositionalData(tinyxml2::XMLElement *elememnt, int &size);
+glm::vec3 *TerracePositionalData(tinyxml2::XMLElement *elememnt, int &size);
+
+int *WallIndexData(tinyxml2::XMLElement *element, int &size);
+int *ColumnIndexData(tinyxml2::XMLElement *element, int &size);
+int *BeamIndexData(tinyxml2::XMLElement *elememnt, int &size);
+int *StairIndexData(tinyxml2::XMLElement *elememnt, int &size);
+int *DoorIndexData(tinyxml2::XMLElement *elememnt, int &size);
+int *WindowIndexData(tinyxml2::XMLElement *elememnt, int &size);
+int *BalconyIndexData(tinyxml2::XMLElement *elememnt, int &size);
+int *TerraceIndexData(tinyxml2::XMLElement *elememnt, int &size);
+
+#endif
 #endif

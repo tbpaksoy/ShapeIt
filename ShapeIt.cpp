@@ -18,7 +18,7 @@
 #include "resources/Shader.h"
 #include "resources/Shader.cpp"
 
-#include "resources/Object.h"
+// #include "resources/Object.h"
 #ifdef OBJECT_H
 #include "resources/Object.cpp"
 #endif
@@ -213,6 +213,10 @@ void PrepareTextBuffer(std::vector<Text *> texts, GLuint &vertexArray, int &size
 int main()
 {
 
+    std::string file;
+    std::cout << "Enter the file name: ";
+    std::cin >> file;
+
     glfwInit();
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -241,8 +245,11 @@ int main()
 
     Shader *meshShader = new Shader("Shaders\\vertex.vs", "Shaders\\fragment.fs");
 
+    if (file.size() < 4 || file.substr(file.size() - 4) != ".xml")
+        file += ".xml";
+
     tinyxml2::XMLDocument *doc = new tinyxml2::XMLDocument();
-    doc->LoadFile("test.xml");
+    doc->LoadFile(file.c_str());
     MeshData md;
     AnalyzeTag(doc->RootElement(), md);
     GLuint meshVertexArray;

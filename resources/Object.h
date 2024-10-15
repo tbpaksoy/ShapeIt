@@ -67,6 +67,9 @@ public:
     glm::vec3 GetNormal(int index) const;
 #ifdef ADVANCED
     glm::vec3 GetCenter() const;
+    glm::vec3 GetPosition() const;
+    glm::vec3 GetRotation() const;
+    glm::vec3 GetScale() const;
 #endif
     glm::vec2 GetUV(int index) const;
     void Move(glm::vec3 value) noexcept;
@@ -74,6 +77,9 @@ public:
     void Scale(glm::vec3 value) noexcept;
 #ifdef ADVANCED
     void CalculateBoundingBox(glm::vec3 &min, glm::vec3 &max);
+    std::string GetName() const;
+    Object *GetParent() const;
+    std::vector<Object *> GetChildren() const;
 #endif
 };
 #endif

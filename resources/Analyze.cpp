@@ -5,8 +5,11 @@
 #include <iostream>
 #include <math.h>
 #include <exception>
+#include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/euler_angles.hpp>
 #include <sstream>
 #include <numeric>
 #include <exprtk.hpp>
@@ -405,6 +408,7 @@ glm::vec3 *PrismPositionalData(tinyxml2::XMLElement *element, int &size)
 glm::vec3 *ImportPositionalData(tinyxml2::XMLElement *element, int &size)
 {
     // TODO: Implement the import positional data. (7.10.2024)
+    throw std::runtime_error("Import positional data is not implemented yet.");
 }
 glm::vec3 *ParametricPositionalData(tinyxml2::XMLElement *element, int &size)
 {
@@ -654,6 +658,7 @@ int *PrismIndexData(tinyxml2::XMLElement *element, int &size)
 int *ImportIndexData(tinyxml2::XMLElement *element, int &size)
 {
     // TODO: Implement the import index data. (7.10.2024)
+    throw std::runtime_error("Import index data is not implemented yet.");
 }
 int *ParametricIndexData(tinyxml2::XMLElement *element, int &size)
 {
@@ -701,21 +706,7 @@ glm::vec3 *Translate(glm::vec3 *input, int size, glm::vec3 offset)
 }
 glm::vec3 *Rotate(glm::vec3 *input, int size, glm::vec3 rotation)
 {
-    // FIXME: Rotation is not in correct unit.
-    float x = rotation.x, y = rotation.y, z = rotation.z;
-    float divider = sqrt(x * x + y * y + z * z);
-    float u = x / divider, v = y / divider, w = z / divider;
-    glm::vec3 center = std::accumulate(input, input + size, glm::vec3(0, 0, 0)) / (float)size;
-    glm::vec3 *output = new glm::vec3[size];
-    for (int i = 0; i < size; i++)
-    {
-        glm::vec3 v3 = input[i] - center;
-        v3 = glm::rotateX(v3, rotation.x);
-        v3 = glm::rotateY(v3, rotation.y);
-        v3 = glm::rotateZ(v3, rotation.z);
-        output[i] = v3 + center;
-    }
-    return output;
+    return Rotate(input, size, glm::quat(rotation * 0.017453f));
 }
 glm::vec3 *Rotate(glm::vec3 *input, int size, glm::quat rotation)
 {
@@ -726,10 +717,7 @@ glm::vec3 *Rotate(glm::vec3 *input, int size, glm::quat rotation)
     {
         glm::vec3 v = input[i];
         v -= center;
-        v = glm::vec3(
-            rotation.w * v.x + rotation.y * v.z - rotation.z * v.y,
-            rotation.w * v.y - rotation.x * v.z + rotation.z * v.z,
-            rotation.w * v.z + rotation.x * v.y - rotation.y * v.x);
+        v = v * rotation;
         v += center;
         output[i] = v;
     }
@@ -772,6 +760,7 @@ glm::vec3 *ApplyTranforms(tinyxml2::XMLElement *element, glm::vec3 *input, int s
         }
         input = Scale(input, size, scale);
     }
+
     if (element->Attribute("rotation"))
     {
         std::string s = element->Attribute("rotation");
@@ -837,6 +826,7 @@ glm::vec3 *ApplyTranforms(tinyxml2::XMLElement *element, glm::vec3 *input, int s
         break;
         }
     }
+
     glm::vec3 offset = glm::vec3(0, 0, 0);
     if (element->Attribute("offset"))
     {
@@ -856,7 +846,9 @@ glm::vec3 *ApplyTranforms(tinyxml2::XMLElement *element, glm::vec3 *input, int s
                 else if (std::isdigit(c) || c == '.' || c == '-')
                     ss << c;
             }
+            vec[2] = std::stof(ss.str());
             offset = glm::vec3(vec[0], vec[1], vec[2]);
+            delete[] vec;
         }
         catch (const std::exception &e)
         {
@@ -888,3 +880,7 @@ std::function<glm::vec3(float, float)> CreateParametricFunction(tinyxml2::XMLEle
         return glm::vec3(x, expression.value(), z);
     };
 }
+
+#ifdef ADVANCED &&ARCHITECTURE
+
+#endif
