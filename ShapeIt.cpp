@@ -18,7 +18,7 @@
 #include "resources/Shader.h"
 #include "resources/Shader.cpp"
 
-// #include "resources/Object.h"
+#include "resources/Object.h"
 #ifdef OBJECT_H
 #include "resources/Object.cpp"
 #endif

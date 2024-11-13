@@ -40,7 +40,7 @@ private:
     std::vector<Object *> children;
 #endif
     int positionIndex = 0, colorIndex = 3, normalIndex = 6, uvIndex = 9;
-    int begin, end;
+    std::vector<int> points;
 
 public:
     // En : Constructor and desconstructor for the object model.

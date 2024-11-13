@@ -1,0 +1,6 @@
+<root>
+    <Box color="adaada" height="0.3" width="0.3" depth="0.3" />
+    <Cone color="eceece" height="0.3" radius="0.3" resolution="4"
+        rotation="0,45,0" offset="0,0.3,0" />
+    <Box color="adeade" height="0.12" width="0.15" offset="0,0.7,0" />
+</root>

@@ -1,0 +1,5 @@
+<root>
+    <Column name="A" height="2m" />
+    <Column name="B" height="2m" />
+    <Wall between="A-B" floor="0" thickness="15cm" />
+</root>

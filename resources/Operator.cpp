@@ -3,6 +3,34 @@
 #include <map>
 #include <tuple>
 #include <vector>
+#include <algorithm>
+#include <string>
+
+static std::string GetString(Edge edge)
+{
+    float a = std::get<0>(edge).x,
+          b = std::get<0>(edge).y,
+          c = std::get<0>(edge).z,
+          d = std::get<1>(edge).x,
+          e = std::get<1>(edge).y,
+          f = std::get<1>(edge).z;
+
+    return std::to_string(a) + " " + std::to_string(b) + " " + std::to_string(c) + " -> " + std::to_string(d) + " " + std::to_string(e) + " " + std::to_string(f);
+}
+static std::string GetString(Triangle triangle)
+{
+    float a = std::get<0>(triangle).x,
+          b = std::get<0>(triangle).y,
+          c = std::get<0>(triangle).z,
+          d = std::get<1>(triangle).x,
+          e = std::get<1>(triangle).y,
+          f = std::get<1>(triangle).z,
+          g = std::get<2>(triangle).x,
+          h = std::get<2>(triangle).y,
+          i = std::get<2>(triangle).z;
+
+    return std::to_string(a) + " " + std::to_string(b) + " " + std::to_string(c) + " -> " + std::to_string(d) + " " + std::to_string(e) + " " + std::to_string(f) + " -> " + std::to_string(g) + " " + std::to_string(h) + " " + std::to_string(i);
+}
 
 extern std::map<const char *, std::vector<VertexData>> OperationSpace;
 float *GetOperatedValueData(int &size)
@@ -37,14 +65,13 @@ static glm::vec3 CalculateTriangleNormal(int triangle[3])
             glm::vec3(triangle[0], triangle[0] + 1, triangle[0] + 2),
             glm::vec3(triangle[1], triangle[1] + 1, triangle[1] + 2),
             glm::vec3(triangle[2], triangle[2] + 1, triangle[2] + 2)};
-    glm::vec3 normal = glm::cross(_triangle[1] - _triangle[0], _triangle[3] - _triangle[0]);
+    glm::vec3 normal = glm::cross(_triangle[1] - _triangle[0], _triangle[2] - _triangle[0]);
     normal = glm::normalize(normal);
-    delete[] _triangle;
     return normal;
 }
 static glm::vec3 CalculateTriangleNormal(glm::vec3 triangle[3])
 {
-    glm::vec3 normal = glm::cross(triangle[1] - triangle[0], triangle[3] - triangle[0]);
+    glm::vec3 normal = glm::cross(triangle[1] - triangle[0], triangle[2] - triangle[0]);
     normal = glm::normalize(normal);
     return normal;
 }
@@ -61,8 +88,8 @@ static int *DetermineBoundaryPoints(int *input, int inputSize, int &outputSize)
 
     std::vector<VertexData> position = OperationSpace["position"];
 
-    std::map<Edge, int> edges;
-    std::map<Edge, std::tuple<int, int>> correspondingEdges;
+    std::map<std::string, int> edges;
+    std::map<std::string, std::tuple<int, int>> correspondingEdges;
 
     for (int i = 0; i < inputSize; i += 3)
     {
@@ -77,25 +104,25 @@ static int *DetermineBoundaryPoints(int *input, int inputSize, int &outputSize)
              edge2 = std::make_tuple(glm::min(b, c), glm::max(b, c)),
              edge3 = std::make_tuple(glm::min(c, a), glm::max(c, a));
 
-        if (correspondingEdges.find(edge1) == correspondingEdges.end())
-            correspondingEdges[edge1] = std::make_tuple(input[i], input[i + 1]);
-        if (correspondingEdges.find(edge2) == correspondingEdges.end())
-            correspondingEdges[edge2] = std::make_tuple(input[i + 1], input[i + 2]);
-        if (correspondingEdges.find(edge3) == correspondingEdges.end())
-            correspondingEdges[edge3] = std::make_tuple(input[i + 2], input[i]);
+        if (correspondingEdges.find(GetString(edge1)) == correspondingEdges.end())
+            correspondingEdges[GetString(edge1)] = std::make_tuple(input[i], input[i + 1]);
+        if (correspondingEdges.find(GetString(edge2)) == correspondingEdges.end())
+            correspondingEdges[GetString(edge2)] = std::make_tuple(input[i + 1], input[i + 2]);
+        if (correspondingEdges.find(GetString(edge3)) == correspondingEdges.end())
+            correspondingEdges[GetString(edge3)] = std::make_tuple(input[i + 2], input[i]);
 
-        if (edges.find(edge1) == edges.end())
-            edges[edge1] = 1;
+        if (edges.find(GetString(edge1)) == edges.end())
+            edges[GetString(edge1)] = 1;
         else
-            edges[edge1]++;
-        if (edges.find(edge2) == edges.end())
-            edges[edge2] = 1;
+            edges[GetString(edge1)]++;
+        if (edges.find(GetString(edge2)) == edges.end())
+            edges[GetString(edge2)] = 1;
         else
-            edges[edge2]++;
-        if (edges.find(edge3) == edges.end())
-            edges[edge3] = 1;
+            edges[GetString(edge2)]++;
+        if (edges.find(GetString(edge3)) == edges.end())
+            edges[GetString(edge3)] = 1;
         else
-            edges[edge3]++;
+            edges[GetString(edge3)]++;
     }
 
     std::vector<int> indices;
@@ -120,6 +147,7 @@ static int *DetermineBoundaryPoints(int *input, int inputSize, int &outputSize)
 
 void Extrude(int *selectedIndices, int selectedSize, float distance)
 {
+    // TEST this function. (15.10.2024)
     if (selectedSize % 3 != 0)
         return;
 
@@ -129,7 +157,6 @@ void Extrude(int *selectedIndices, int selectedSize, float distance)
     {
         int indices[3] = {selectedIndices[i], selectedIndices[i + 1], selectedIndices[i + 2]};
         normal += CalculateTriangleNormal(indices);
-        delete[] indices;
     }
 
     normal = glm::normalize(normal);
@@ -143,7 +170,7 @@ void Extrude(int *selectedIndices, int selectedSize, float distance)
     for (int i = 0; i < selectedSize; i++)
     {
         int index = selectedIndices[i];
-        glm::vec3 vertex = glm::vec3(position[index], position[index + 1], position[index + 2]);
+        glm::vec3 vertex = glm::vec3(position[index].value, position[index + 1].value, position[index + 2].value);
         newVertices.push_back(vertex + direction);
     }
 
@@ -156,9 +183,9 @@ void Extrude(int *selectedIndices, int selectedSize, float distance)
     }
     for (int i = 0; i < indices.size(); i += 3)
     {
-        bool a = std::find(toDelete.begin(), toDelete.end(), indices[i]) != toDelete.end(),
-             b = std::find(toDelete.begin(), toDelete.end(), indices[i + 1]) != toDelete.end(),
-             c = std::find(toDelete.begin(), toDelete.end(), indices[i + 2]) != toDelete.end();
+        bool a = std::find(toDelete.begin(), toDelete.end(), indices[i].index) != toDelete.end(),
+             b = std::find(toDelete.begin(), toDelete.end(), indices[i + 1].index) != toDelete.end(),
+             c = std::find(toDelete.begin(), toDelete.end(), indices[i + 2].index) != toDelete.end();
         if (a || b || c)
         {
             indices.erase(indices.begin() + i, indices.begin() + i + 3);
@@ -177,7 +204,9 @@ void Extrude(int *selectedIndices, int selectedSize, float distance)
         position.push_back(z);
     }
 
-    int maxIndex = (*std::max_element(indices.begin(), indices.end())).index;
+    int maxIndex = (*std::max_element(indices.begin(), indices.end(), [](VertexData a, VertexData b)
+                                      { return a.index < b.index; }))
+                       .index;
     // En: Extruded faces.
     // Tr: Dışa doğru çıkartılmış yüzler.
 
@@ -229,10 +258,10 @@ void Extrude(int *selectedIndices, int selectedSize, float distance)
         c.index = newBoundary[i];
         d.index = newBoundary[i + 1];
 
-        glm::vec3 _a = glm::vec3(position[a.index], position[a.index + 1], position[a.index + 2]),
-                  _b = glm::vec3(position[b.index], position[b.index + 1], position[b.index + 2]),
-                  _c = glm::vec3(position[c.index], position[c.index + 1], position[c.index + 2]),
-                  _d = glm::vec3(position[d.index], position[d.index + 1], position[d.index + 2]);
+        glm::vec3 _a = glm::vec3(position[a.index].value, position[a.index + 1].value, position[a.index + 2].value),
+                  _b = glm::vec3(position[b.index].value, position[b.index + 1].value, position[b.index + 2].value),
+                  _c = glm::vec3(position[c.index].value, position[c.index + 1].value, position[c.index + 2].value),
+                  _d = glm::vec3(position[d.index].value, position[d.index + 1].value, position[d.index + 2].value);
 
         float tsp = glm::dot(_a, glm::cross(_b, _c));
         if (tsp < 0)
