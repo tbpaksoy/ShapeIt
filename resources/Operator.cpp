@@ -145,7 +145,7 @@ static int *DetermineBoundaryPoints(int *input, int inputSize, int &outputSize)
     return output;
 }
 
-void Extrude(int *selectedIndices, int selectedSize, float distance)
+void Extrude(int *selectedIndices, int selectedSize, float distance, float offset)
 {
     // TEST this function. (15.10.2024)
     if (selectedSize % 3 != 0)
@@ -171,7 +171,7 @@ void Extrude(int *selectedIndices, int selectedSize, float distance)
     {
         int index = selectedIndices[i];
         glm::vec3 vertex = glm::vec3(position[index].value, position[index + 1].value, position[index + 2].value);
-        newVertices.push_back(vertex + direction);
+        newVertices.push_back(vertex + direction * offset);
     }
 
     std::vector<int> toDelete;
@@ -289,3 +289,153 @@ void Extrude(int *selectedIndices, int selectedSize, float distance)
     delete[] boundary;
     delete[] newBoundary;
 }
+void Extrude(int *selectedIndices, int selectedSize, float distance, glm::vec3 direction, float offset)
+{
+    // TEST this function. (14.11.2024)
+    if (selectedSize % 3 != 0)
+        return;
+
+    glm::vec3 normal = glm::vec3(0.0f, 0.0f, 0.0f);
+
+    for (int i = 0; i < selectedSize; i += 3)
+    {
+        int indices[3] = {selectedIndices[i], selectedIndices[i + 1], selectedIndices[i + 2]};
+        normal += CalculateTriangleNormal(indices);
+    }
+
+    normal = glm::normalize(normal);
+
+    int boundarySize;
+    int *boundary = DetermineBoundaryPoints(selectedIndices, selectedSize, boundarySize);
+    std::vector<glm::vec3> newVertices;
+    std::vector<VertexData> &position = OperationSpace["position"], &indices = OperationSpace["indices"];
+
+    for (int i = 0; i < selectedSize; i++)
+    {
+        int index = selectedIndices[i];
+        glm::vec3 vertex = glm::vec3(position[index].value, position[index + 1].value, position[index + 2].value);
+        newVertices.push_back(vertex + direction * offset);
+    }
+
+    std::vector<int> toDelete;
+    for (int i = 0; i < selectedSize; i++)
+    {
+        int index = selectedIndices[i];
+        if (std::find(boundary, boundary + boundarySize, index) == boundary + boundarySize)
+            toDelete.push_back(index);
+    }
+    for (int i = 0; i < indices.size(); i += 3)
+    {
+        bool a = std::find(toDelete.begin(), toDelete.end(), indices[i].index) != toDelete.end(),
+             b = std::find(toDelete.begin(), toDelete.end(), indices[i + 1].index) != toDelete.end(),
+             c = std::find(toDelete.begin(), toDelete.end(), indices[i + 2].index) != toDelete.end();
+        if (a || b || c)
+        {
+            indices.erase(indices.begin() + i, indices.begin() + i + 3);
+            i -= 3;
+        }
+    }
+    for (int i = 0; i < newVertices.size(); i++)
+    {
+        glm::vec3 vertex = newVertices[i];
+        VertexData x, y, z;
+        x.value = vertex.x;
+        y.value = vertex.y;
+        z.value = vertex.z;
+        position.push_back(x);
+        position.push_back(y);
+        position.push_back(z);
+    }
+
+    int maxIndex = (*std::max_element(indices.begin(), indices.end(), [](VertexData a, VertexData b)
+                                      { return a.index < b.index; }))
+                       .index;
+    // En: Extruded faces.
+    // Tr: Dışa doğru çıkartılmış yüzler.
+
+    std::vector<int> newIndices;
+    for (int i = 0; i < selectedSize; i += 3)
+    {
+        VertexData a, b, c;
+        a.index = maxIndex + i;
+        b.index = maxIndex + i + 1;
+        c.index = maxIndex + i + 2;
+
+        glm::vec3 _a = newVertices[i],
+                  _b = newVertices[i + 1],
+                  _c = newVertices[i + 2];
+
+        float tsp = glm::dot(_a, glm::cross(_b, _c));
+        if (tsp < 0)
+        {
+            indices.push_back(a);
+            indices.push_back(b);
+            indices.push_back(c);
+
+            newIndices.push_back(a.index);
+            newIndices.push_back(b.index);
+            newIndices.push_back(c.index);
+        }
+        else
+        {
+            indices.push_back(c);
+            indices.push_back(b);
+            indices.push_back(a);
+
+            newIndices.push_back(c.index);
+            newIndices.push_back(b.index);
+            newIndices.push_back(a.index);
+        }
+    }
+
+    // En: sides of the extruded faces.
+    // Tr: Dışa doğru çıkartılmış yanları.
+
+    int *newBoundary = DetermineBoundaryPoints(newIndices.data(), newIndices.size(), boundarySize);
+
+    for (int i = 0; i < boundarySize; i++)
+    {
+        VertexData a, b, c, d;
+        a.index = boundary[i];
+        b.index = boundary[i + 1];
+        c.index = newBoundary[i];
+        d.index = newBoundary[i + 1];
+
+        glm::vec3 _a = glm::vec3(position[a.index].value, position[a.index + 1].value, position[a.index + 2].value),
+                  _b = glm::vec3(position[b.index].value, position[b.index + 1].value, position[b.index + 2].value),
+                  _c = glm::vec3(position[c.index].value, position[c.index + 1].value, position[c.index + 2].value),
+                  _d = glm::vec3(position[d.index].value, position[d.index + 1].value, position[d.index + 2].value);
+
+        float tsp = glm::dot(_a, glm::cross(_b, _c));
+        if (tsp < 0)
+        {
+            indices.push_back(a);
+            indices.push_back(b);
+            indices.push_back(c);
+
+            indices.push_back(b);
+            indices.push_back(d);
+            indices.push_back(c);
+        }
+        else
+        {
+            indices.push_back(c);
+            indices.push_back(b);
+            indices.push_back(a);
+
+            indices.push_back(c);
+            indices.push_back(d);
+            indices.push_back(b);
+        }
+    }
+
+    delete[] boundary;
+    delete[] newBoundary;
+}
+
+void BevelEdge(int *selectedindices, int selectionSize, float value)
+{
+    // TODO:Implement this function. (14.11.2024)
+}
+
+// TODO: Implement ConstantInset and RelativeInset. (14.11.2024)

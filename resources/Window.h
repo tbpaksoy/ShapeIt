@@ -1,9 +1,14 @@
 #include <GLFW/glfw3.h>
+#include <vector>
+#include <map>
+#include <functional>
 #include "Buffer.h"
+#include "Shader.h"
 #ifndef WINDOW_H
 #define WINDOW_H
 class Window;
 void Render(Window **windows, int count);
+
 #ifdef IMGUI
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -11,9 +16,7 @@ void Render(Window **windows, int count);
 #include "imgui_impl_opengl3_loader.h"
 #else
 #include <GL/glew.h>
-#include <vector>
-#include <map>
-#include <functional>
+#endif
 
 class Window
 {
@@ -25,12 +28,21 @@ private:
     int width, height;
     const char *title;
     bool resizable;
+    float lastFrame = 0.0f, currentFrame = 0.0f, deltaTime = 0.0f;
 
     // En: Rendering related variables
     // Tr: Render ile ilgili değişkenler
 
     std::vector<Buffer> buffers;
+#ifdef IMGUI
+    std::map<ImU32, std::function<void()>> beforeRender, afterRender;
+    std::map<ImU32, Shader *> shaders;
+    std::vector<std::function<void()>> imguiRender;
+#else
     std::map<GLuint, std::function<void()>> beforeRender, afterRender;
+    std::map<GLuint, Shader *> shaders;
+#endif
+    std::vector<std::function<void()>> onFrame;
 
     // En: Input related variables
     // Tr: Girdi ile ilgili değişkenler
@@ -53,10 +65,13 @@ public:
     const char *GetTitle() const;
     int GetWidth() const;
     int GetHeight() const;
+    void ScreenSize(int &width, int &height);
     void UpdateTitle(const char *title);
     void UpdateResizable(bool resizable);
     void SetFullscreen();
     void SetFullscreen(GLFWmonitor *monitor);
+    void AddOnFrame(std::function<void()> onFrame);
+    float GetDeltaTime() const;
 
     // En: Functions related to input
     // Tr: Girdi ile ilgili fonksiyonlar
@@ -69,10 +84,13 @@ public:
     // En: Functions related to rendering
     // Tr: Render ile ilgili fonksiyonlar
 
+#ifdef IMGUI
+    void AddImGuiRender(std::function<void()> imguiRender);
+    void ClearImGuiRender();
+#endif
     void Render();
     void AddBuffer(Buffer buffer);
 
     friend void Render(Window **windows, int count);
 };
-#endif
 #endif
